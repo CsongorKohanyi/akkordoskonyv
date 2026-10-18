@@ -198,6 +198,6 @@ await openDB();st.songs=await dbAll();
 if(!st.songs.length||(st.songs.length==1&&st.songs[0].id=="sample")){if(st.songs.length)dbDel("sample");st.songs=normalize(SEED);if(!st.songs.length)st.songs=[SAMPLE];st.songs.forEach(function(s){dbPut(s)});setDirty(false)}
 st.cur=st.songs.sort(function(a,b){return (a.ord||0)-(b.ord||0)})[0].id;draw()})();
 </script>
-<p style="display: none;">a</p>
+<p style="display: none;">ab</p>
 </body>
 </html>
