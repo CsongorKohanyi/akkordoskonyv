@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-title" content="Akkordkönyv">
+<title>Akkordkönyv</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,700&display=swap">
+<style>
+:root{--bg:#e9efee;--panel:#f6f9f8;--ink:#1c2a29;--mute:#5b6e6c;--line:#c5d2d0;--acc:#8a2c3b;--accink:#fff;
+color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a1a;--panel:#1d2525;--ink:#e6eeec;--mute:#93a7a4;--line:#344341;--acc:#e8909f;--accink:#1a1012;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141a1a;--panel:#1d2525;--ink:#e6eeec;--mute:#93a7a4;--line:#344341;--acc:#e8909f;--accink:#1a1012;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Literata,Georgia,'Times New Roman',serif;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:900px;margin:0 auto;padding:16px 14px 120px}
+h1{font-size:1.4rem;margin:0 0 12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+select,button,input,textarea{font:inherit;color:inherit}
+select,input[type=text],textarea{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+select{font-size:16px}
+button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 13px;min-height:44px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:active{border-color:var(--acc)}
+button.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:700}
+button.del{color:var(--acc)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.grow{flex:1;min-width:150px}
+.tools{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:14px}
+.grp{display:flex;align-items:center;gap:6px}
+.grp span{color:var(--mute);font-size:.88rem}
+.grp b{min-width:2.2em;text-align:center}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 16px}
+.sheet h2{margin:0 0 16px;font-size:1.3rem}
+.line{display:flex;flex-wrap:wrap;margin-bottom:.9em;font-size:var(--fs,18px)}
+.seg{display:inline-flex;flex-direction:column;white-space:pre-wrap}
+.ch{color:var(--acc);font-weight:700;padding-right:.35em;min-height:1.5em;font-size:.92em}
+.ly{min-height:1.5em}
+.sec{margin:1.3em 0 .5em;font-style:italic;color:var(--mute);font-size:var(--fs,18px)}
+.plain{font-size:var(--fs,18px);min-height:1.5em;white-space:pre-wrap}
+.gap{height:.8em}
+.imgw{overflow-x:auto}
+.imgw img{display:block;max-width:none;height:auto}
+.edit{display:grid;gap:10px}
+.edit textarea{min-height:60vh;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;line-height:1.55;resize:vertical}
+.hint,#msg{color:var(--mute);font-size:.88rem;margin:0}
+#msg{min-height:1.3em;margin-bottom:8px}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:30px;padding:6px 14px 6px 6px;box-shadow:0 4px 18px rgba(0,0,0,.22);z-index:5}
+.fab input{width:120px;accent-color:var(--acc)}
+.fab span{font-size:.85rem;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Akkordkönyv</h1>
+<div class="bar">
+<select id="sel" class="grow" aria-label="Dal kiválasztása"></select>
+<button id="imp" class="pri">Fájlok betöltése</button>
+<input type="file" id="fi" multiple accept=".txt,text/plain,image/png,image/jpeg,image/webp" hidden>
+</div>
+<div class="bar">
+<button id="new">Új dal</button><button id="ed">Szerkesztés</button><button id="del" class="del">Törlés</button>
+</div>
+<div class="bar"><button id="ljson">songs.json betöltése</button><button id="xjson" class="pri">Mentés songs.json-ba</button><input type="file" id="jfi" accept=".json,application/json" hidden></div>
+<p id="msg" role="status"></p>
+<div id="tools" class="tools">
+<div class="grp"><span>Hangnem</span><button id="dn" aria-label="Fél hanggal lejjebb">−</button><b id="sh">0</b><button id="up" aria-label="Fél hanggal feljebb">+</button></div>
+<div class="grp"><button id="fl" aria-label="Kereszt vagy bé jelölés">♯</button></div>
+<div class="grp"><button id="fm" aria-label="Kisebb betű">A−</button><button id="fp" aria-label="Nagyobb betű">A+</button></div>
+</div>
+<main id="main"></main>
+</div>
+<div class="fab" id="fab"><button id="play" class="pri" aria-label="Automatikus görgetés">▶ Görgetés</button><span>Sebesség</span><input type="range" id="spd" min="1" max="10" step="0.5" value="3" aria-label="Görgetés sebessége"></div>
+<script>
+var NS=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+var NF=["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+var ALT={Db:"C#",Eb:"D#",Gb:"F#",Ab:"G#",Bb:"A#",H:"B"};
+var CRE=/^([A-GH][#b]?)([^\/]*)(?:\/([A-GH][#b]?))?$/;
+var SAMPLE={id:"sample",title:"Amazing Grace (közkincs)",type:"text",ord:1,text:"# 1. vers\n[G]Amazing grace, how [C]sweet the [G]sound\nThat saved a [Em]wretch like [D]me\nI [G]once was lost, but [C]now am [G]found\nWas [Em]blind but [D]now I [G]see\n"};
+var SEED=[{"title": "Egy Hangon", "text": "\n\n\t[C][Em][G][C][Em][D]\n \n         \t\t\t             \nV1     [Em] Féltő szer[C]elmed hozott ki mi[G]nket\n                                     \n      A sötét homá[D]lyból fényedre[Em]\n                                        \n      Fájdalmunk e[C]lmúlt gyógyulást ho[G]ztál szívünkbe[D]\n\nR  \n        [Em] Egy hangon emeljük fel,\n        [C] Egy hangon dicsérjük Őt\n        [G] Egy hangon emeljük fel,\n    \t  Z[D]engjük Hallelujah (x2)\n\nV2                                    \n      [Em] A láncok szét[C]törnek, a szemek megnyí[G]lnak\n                                   \n      A sereged fel[D]kel és győztesen jár[Em]\n                                           \n      A halál legy[C]őzve, győzelmet ad[G]tál, mert feltámadtál[D]!\n\n\n  \t[Em][C][G][D]\n\n\nH     Dicsérjük, [Em]mert dicsőség[C]es, dicsőség[G]es, dicsőség[D]es\n\n                                                                     \n      Az Ő neve[Em] dicsőség[C]es, dicsőség[G]es, dicsőség[D]es\n\n\nI V1 R V2 R H H H R", "type": "text"}, {"title": "Új hálaének áldja Istent", "text": "\n(Jansik Csaba / Namíbiai dallam)\n\n\n\nV1\n\n[G] Új hálaének áldja [C] Istent, a [D7] teremtmény Urát,\n\nÓ [G] hívott [G7] mindent [C] élet[Cm6]re és\n\n[Am7] Szeretete [D7] mindig [G] vár.\n\n\n\nV2\n\n[G] Új hálaének áldja [C] Istent, a [D7] békesség Urát,\n\nŐ [G] ottho[G7]nába [C] hív min[Cm6]ket s a\n\n[Am7] Céltalan is [D7] rátal[G]ál.\n\n\n\nR\n\nÉs [G] minden perc és minden pillanat,\n\nMinden nyelv és ember, minden nép,\n\nÉs minden ország, nemzetség,\n\n[D7] Minden gondolat,\n\n[G] Minden [G7] ember, [C] minden [Cm6] nép,\n\nÉs e[A]gyütt ujjong föld és ég,\n\nA [Am7] te[D7]remtőjéről be[G]szél.\n\n\n\nV3\n\n[G] Új hálaének áldja [C] Istent,\n\nKi [D7] nékünk megbocsát,\n\n[G] Ő nem [G7] hagyott a [C] bűne[Cm6]inkben,\n\nÉs [Am7] értünk [D7] küldte szent Fi[G]át.\n\n\n\nV4\n\n[G] Már minden egyes ember [C] áldja\n\nA [D7] menny és föld Urát,\n\n[G] Őt Jé[G7]zusban meg[C]talál[Cm6]ja\n\nA [Am7] megsza[D7]badított vi[G]lág.\n\n\n\nSzerkezet / Sorrend:\n\nV1 V2 R V3 R V4 R", "type": "text"}, {"title": "Isten fénye", "text": "\n(F.: Anders Nyberg / Dél-afrikai dallam)\n\n\n\nV1\n\n[G] Isten [D] fé[G]nye út a sötétben,\n\n[D] Isten fénye út a [G] sötétben.\n\n[G] Isten [D] fé[G]nye út a sötétben,\n\n[D] Isten fénye út a [G] sötétben.\n\n\n\nR\n\n[G] Fogd a kezünk, [C] Ó [G] Isten,\n\n[G] Isten útján megyünk,\n\n[D] Isten útján együtt hadd men[G]jünk!\n\n[G] Fogd a kezünk, [C] Ó [G] Isten,\n\n[G] Isten útján együtt [D] hadd men[G]jünk!\n\n\n\nV2\n\n[G] Isten [D] Lelke [G] az, ki erőt ad,\n\n[D] Isten Lelke az, ki erőt [G] ad.\n\n[G] Isten [D] Lelke [G] az, ki erőt ad,\n\n[D] Isten Lelke az, ki erőt [G] ad.\n\n\n\nSzerkezet / Sorrend:\n\nV1 R V2 R", "type": "text"}, {"title": "Te erőt adsz (Te felemelsz)ver.1", "text": "\n(Rolf Løvland - Brendan Graham / Ford.: Szabó András)\n\n\n\nV1\n\nHa [C]lelkem [F]árva, s két[C]ségekgyötör[Em]nek,\n\nHa gon[F]dok gyűlnek, [G4]fáradt szívemen,\n\nÚgy [G]várlak [F]némán, lép[C/E]teid fi[F]gyelve,\n\nMíg [C/G]hozzám [G]érsz, és le[C]ülsz csendesen.\n\n\n\nV2 (Kézzel írt szöveg)\n\nNincs [C]életem [F]e szomjúsá[C]gom nélkül...\n\nTerád [Em]úgy [F]vágyik nyugtalan [G4]szívem.\n\nDe hogyha [G]jössz, [F]és rám zúdít[C/E]od fé[F]nyed,\n\nA Végte[C/G]len ki[G]tárul előtt[C]em.\n\n\n\nR\n\nTe [Am]felemelsz, [F]hogy hegycsúcsok[C]ra áll[G]jak,\n\nTe [Am]hordozol [F]a hullámo[G4]kon át.\n\nE[G]rőt adsz, [C]ha kőszik[F]lám a váll[C/E]ad, [F]\n\nÉs [C/G]az leszek, [G]ki-nek megál[C]modtál.", "type": "text"}, {"title": "Te erőt adsz (Te felemelsz)ver.2", "text": "V1:\n\n[C] Ha szívem [F]fáj és kétely [C]lakik bennem\n\n[Em] A csügge[F]dés oly közel [G4]jön hozzám\n\n[G] Én várok [F]rád s Te mellém [C]ülsz a csendben\n\n[F] Megvigasz[C]talsz [G]a jelenlé[C]teddel\n\n\n\nR:\n\nTe [Am]erőt [F]adsz, ha megfárad [C]a lelkem [G]\n\nErőt [G]adod, [Am]velem [F]vagy, nem hagyhatsz [G4]el\n\nFelemelsz [G]s tovább [Am]viszel az [F]úton [C] [F]\n\nTe [F]erőt [C]adsz, mely [G]nem fogy el so[C]sem\n\n\n\n\nV2:\n\nA [C#]szívem már csak [F#]Nálad lelhet [C#]békét\n\n[Fm] Nem élhe[Fisz]tek Tenélküled [G#4]tovább\n\n[G#] Nézlek és [F#]lelkem megtelik [C#]csodával [F#]\n\nAz életem [F#]fényed [C#]ragyog[G#]ja át [C#]\n\n\n\nR:\n\nOly [C#]erőt adsz,\n\n[G#] mely nem [F#]fogy el so[F#]ha...\n\n[C#] Nem fogy [F#]el so[F#m]sem. [C#]", "type": "text"}, {"title": "Indulj és menj", "text": "\n\n\n[Em] [G] [D] [Em] [C] [D] [Em] [H7]\n\n\n\nV1\n\n[Em] Indulj és [G] menj, [D] hirdesd sza[Em]vam.\n\n[C] Népemhez [D] küldelek [Em] Én. [H7]\n\n[Em] Tövis és [G] gaz, [D] vér és pa[Em]nasz,\n\n[C] meddig hall[D]gassam még [Em] Én? [H7]\n\n\n\nR\n\n[G] Küldelek [D] Én, [H7] megáldlak [Em] Én,\n\ncsak [C] menj és [D] hirdesd sza[Em]vam. [H7]\n\n[G] Küldelek [D] Én, [H7] megáldlak [Em] Én,\n\ncsak [C] menj és [D] hirdesd sza[Em]vam.\n\n\n\nV2\n\n[Em] Tüzessé [G] te[D]szem ajka[Em]idat,\n\n[C] gyémánttá [D] homloko[Em]dat. [H7]\n\n[Em] népemnek [G] őré[D]vé rendel[Em]lek Én,\n\n[C] Lelkemet [D] adom mel[Em]léd. [H7]\n\n\n\nSzerkezet / Sorrend:\n\nV1 R V2 R", "type": "text"}, {"title": "Nem adom fel!", "text": "\n(Pintér Béla)\n\n\n\nV1\n\n[F] Nem teszem a kezemet a [Bb] tarkómra,\n\nJöhet a[F]kármilyen nagy próba.\n\n[C] Nem teszem a [F]kezemet a [Bb]tarkómra,\n\nMert már e[F]nyém a [C]győze[F]lem! (Nem adom fel!)\n\n\n\nV2\n\n[F] Katona vagyok egy nagy [C]hadsertegben,\n\nMinden nap csa[F]tába kell mennem.\n\nA [C]kapitány Jézus, én Rá figyeltek,\n\nMinden nap új csa[F]tát nyerek.\n\n\n\nV3\n\nGon[C]dolom, nem mondok túl nagyot,\n\nHa azt ál[F]lítom, hogy harcos vagyok.\n\nI[C]géje a fegyver, a hitem a pajzs,\n\nÍgy a[F]ratok majd nagy diadal!\n\n\n\nRAP\n\nSzeretnék már én is végre kicsi Dávid lenni,\n\nA Góliátok ellen bátor szívvel harcba menni.\n\nVan két kezem, és jól vág az eszem,\n\nÉs van egy erős Isten, aki harcol velem.\n\nLegyőzöm az ellenséget, akármilyen bátor,\n\nMég akkor is, ha nem én vagyok a Terminátor!\n\n\n\nSzerkezet / Sorrend:\n\nV1 V1 V2 V3 RAP V1", "type": "text"}, {"title": "Hétsoroló", "text": "\n(Régi gyermekdal - Pintér Béla)\n\n\n\nV1\n\nA [G]vasárnapom öröm, a hétfőm áldás,\n\nA [D7]keddet is békén töltöm, nincs benne zavargás.\n\n[D] Szerdán és csütörtökön mennyei öröm vár,\n\n[G] Péntekre megfelvirrad a szombati napsugár.\n\n\n\nRAP 1\n\nMinden napom áldás, öröm, meg béke,\n\nMert engem is megmosott a Jézus drága vére.\n\nNeki zeng az ének és róla szól a dal,\n\nVelem együtt énekli most sok-sok fiatal:\n\nA vasárnapom...\n\n\n\nRAP 2\n\nHallják meg most sokan: kicsik és nagyok!\n\nMi az, amitől az én arcom úgy ragyog?\n\n- Nem más ez az öröm, mit Jézus nekem adott,\n\nÉs teljes szívvel kiáltom, hogy nagyon boldog vagyok!\n\nA vasárnapom...\n\n\n\nRAP 3\n\nEgész héten elkísér, és megvéd erős karja,\n\nBenne bízom minden nap, hisz Ő is ezt akarja.\n\nHa sötét van, vagy egyedül vagyok: nincsen mitől félnem,\n\nJézus Krisztus szeret engem, ezt tudom és érzem!\n\nA vasárnapom...\n\n\n\n[C] [D] [G]", "type": "text"}, {"title": "Szükségem van rád", "text": "\n(Dal/Szöveg: Pintér Béla / Kotta: Sebestyén Márton)\n\n\n\n[C] [F] [C] [F]\n\n\n\nV1\n\nÁlmodtam [C]százszor és elkép[F]zeltem,\n\nmilyen lesz [C]majd, ha eljössz hoz[G]zám.\n\nNyílik az [C]ajtó, ott látlak [F]Téged.\n\nMit mondok [C]majd, hogy [G]nézek [C]Rád.\n\n\n\nV2\n\nEmlékszem [C]vártam azon az [F]estén,\n\nhogy halljam [C]hangod, beszélj hoz[G]zám.\n\nAjtómnál [C]álltál, csendben zör[F]gettél,\n\naz álmom [C]így vált [G]valóság[C]gá.\n\n\n\nV3\n\nBeléptél [F]hozzám, asztalhoz [C]ültünk,\n\nelmondtam [F]szívem minden tit[G]kát.\n\nNéztem az [C]arcod, megtudtam [F]mindent,\n\nazóta [C]szüksé[G]gem van [C]rád.\n\n\n\nV4\n\n[A] Eljött a [D]reggel, nálam ma[G]radtál,\n\nvégig be[D]széltük az éjsza[A]kát.\n\nMaradj itt [D]végleg, ezt kértem [G]Tőled,\n\n...", "type": "text"}, {"title": "Hitben járok", "text": "\n(Szerző: Chris Falson / Ford.: Pintér Béla)\n\n\n\nR\n\nHitben [G7]járok, hittel [F]lépek,\n\nhitből [C7]élek, csak Benne [G7]bízom én.\n\n\n\nV1\n\n[Am]Minden lé[G/B]pésemmel [C]hozzá jutok [D]közel,\n\nnincs [Am]fegyver, amely [G/B]győzhet el[C]lenem. [D]\n\n[Am]Minden i[G/B]dőben [C]megvallom hi[D]tem,\n\nHa [Am]Istenem [G/B]velem van, [F]akkor ki lehet el[D]lenem?\n\n\n\nSzerkezet / Sorrend:\n\nR V1 R", "type": "text"}, {"title": "Az enyém lenne minden fájdalom", "text": "\n\n\nV1\n\nAz [C]enyém lenne [F]minden [C]fájdalom,\n\nMinden [F]vád, [G]minden [C]kín,\n\nBelő[F]lem hullt volna [C]annyi vér,\n\nAnnyi [F]könny, [G]annyi [C]víz. [C7]\n\n\n\nR\n\nMért [F]vetted el [G]helyem?\n\nMért [F]vállaltad [G]sebem?\n\nMért [F]lett Tied [G]minden fájdalom? [Am]\n\nMért [F]tetted ezt [G]velem, Krisztu[C]som?\n\n\n\nV2\n\nRaj[C]tam csattanna [F]el minden [C]csók,\n\nÁru[F]lás, [G]tagad[C]ás,\n\nEngem [F]érne minden [C]új köpés,\n\nDurva[F]ság, [G]gyűlö[C]let. [C7]\n\n\n\nV3\n\nRaj[C]tam lenne a [F]bíborpa[C]lást,\n\nMinden [F]bűn, [G]minden [C]vád,\n\nAz [F]enyém lenne az a [C]lándzsahegy,\n\nMinden [F]szeg, [G]fegyve[C]rek! [C7]\n\n\n\nV4\n\nAz enyém lenne már ezer halál,\n\nLá-lá-lá, lá-lá-lá,\n\nEngem fedne minden egyes kő,\n\nLá-lá-lá, lá-lá-lá.\n\n\n\nV5\n\nNem áll sehol sem üres kereszt,\n\nÜres sír, üres vád,\n\nEnyém lenne talán az a fa,\n\nAz a [F]kín, [G]szenve[C]dés! [C7]\n\n\n\nSzerkezet / Sorrend:\n\nV1 R V2 R V3 R V4 R V5 R", "type": "text"}, {"title": "Nem miénk", "text": "\n\n\n[G] [Em] [D] [C] [G] [Csus] [Em] [D]\n\n\n\nV1\n\n[G] A keresztre tekint már sz[Em]emem\n\nA világban többé nincs h[D]elyem\n\nEz nem ról[C]am, Csak rólad sz[G]ól!\n\n[G] Megrendül az ég a h[Em]angunktól\n\nTapsoljon a nép és uj[D]jongjon\n\nEz nem ról[C]unk, Csak rólad sz[G]ól!\n\n\n\nR\n\n[G] Nem miénk, Csak Tiéd m[Csus]inden dics[C]őség\n\n[G] Nem miénk, Csak Tiéd m[Csus]inden dics[C]őség\n\n\n\nV2\n\n[G] Előtted szívünk n[Em]yitva áll\n\nÍgy hód[G]olunk a tr[D]ónodnál\n\nEz nem ról[C]unk, Csak rólad sz[Em]ól\n\n[G] Küldd el szent tüzed, hogy így éghe[Em]ssünk\n\nLássa [G]meg a világ, hogy Te élsz ben[D]nünk\n\nEz nem ról[C]unk, Csak rólad sz[G]ól\n\n\n\nB\n\n[G] A föld megrendül, a hegy felzendül\n\n[C] Ez rólad szól\n\n[Em] A tenger felzúg, a [D]Nap is ujjong\n\n[C] Ez Rólad szól\n\n[G] A mindenség perdülve dalol\n\n[C] Ez rólad szól\n\n[Em] A néped táncol, [D]táncol, táncol\n\n[C] Ez rólad szól, Ez rólad sz[G]ól [C] [Em] [D]", "type": "text"}];
+var st={songs:[],cur:null,shift:0,flat:false,fs:18,editing:false,play:false,spd:3,hu:false,dirty:false};
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function note(t){$("msg").textContent=t||""}
+/* tárolás: IndexedDB (a képek miatt) */
+var DB=null;
+function openDB(){return new Promise(function(res){try{var r=indexedDB.open("akkordkonyv",1);
+r.onupgradeneeded=function(){r.result.createObjectStore("songs",{keyPath:"id"})};
+r.onsuccess=function(){DB=r.result;res()};r.onerror=function(){res()}}catch(e){res()}})}
+function dbAll(){return new Promise(function(res){if(!DB)return res([]);try{var q=DB.transaction("songs").objectStore("songs").getAll();
+q.onsuccess=function(){res(q.result||[])};q.onerror=function(){res([])}}catch(e){res([])}})}
+function dbPut(s){setDirty(true);if(!DB)return;try{DB.transaction("songs","readwrite").objectStore("songs").put(s)}catch(e){note("A mentés nem sikerült (kevés a hely?).")}}
+function dbDel(id){setDirty(true);if(!DB)return;try{DB.transaction("songs","readwrite").objectStore("songs").delete(id)}catch(e){}}
+function uid(){return "s"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function nextOrd(){return st.songs.reduce(function(m,s){return Math.max(m,s.ord||0)},0)+1}
+/* hangnem */
+function semi(n){if(st.hu&&n=="B")return 10;return NS.indexOf(ALT[n]||n)}
+function nm(i,fl){var T=fl?NF:NS,n=T[i];if(st.hu){if(i==11)return "H";if(i==10)return "B"}return n}
+function tr(c,k,fl){if(!k)return c;var m=c.match(CRE);if(!m||semi(m[1])<0)return c;
+var o=nm((semi(m[1])+k+120)%12,fl)+m[2];if(m[3]&&semi(m[3])>=0)o+="/"+nm((semi(m[3])+k+120)%12,fl);return o}
+/* megjelenítés */
+function cur(){return st.songs.filter(function(s){return s.id==st.cur})[0]}
+function fillSel(){st.songs.sort(function(a,b){return (a.ord||0)-(b.ord||0)});
+$("sel").innerHTML=st.songs.map(function(s){return '<option value="'+s.id+'"'+(s.id==st.cur?" selected":"")+">"+(s.type=="image"?"🖼 ":"")+esc(s.title||"Névtelen dal")+"</option>"}).join("")}
+function view(){var s=cur();st.hu=/\[H/.test(s.text||"");var h='<article class="sheet" style="--fs:'+st.fs+'px"><h2>'+esc(s.title||"Névtelen dal")+"</h2>";
+$("sh").textContent=(st.shift>0?"+":"")+st.shift;$("fl").textContent=st.flat?"♭":"♯";
+if(s.type=="image"){h+='<div class="imgw"><img alt="'+esc(s.title)+'" src="'+s.img+'" style="width:'+Math.round(st.fs/18*100)+'%"></div>'}
+else{(s.text||"").split("\n").forEach(function(ln){
+if(/^\s*$/.test(ln)){h+='<div class="gap"></div>';return}
+if(ln.charAt(0)=="#"){h+='<div class="sec">'+esc(ln.replace(/^#+\s*/,""))+"</div>";return}
+if(/^\s*(V\d*|R\d*|H|B|I|RAP ?\d*|Szerkezet \/ Sorrend:?)\s*:?\s*$/i.test(ln)){h+='<div class="sec">'+esc(ln.trim())+"</div>";return}
+if(ln.indexOf("[")<0){h+='<div class="plain">'+esc(ln)+"</div>";return}
+h+='<div class="line">';
+ln.split(/(\[[^\]]+\])/).forEach(function(t,i,a){
+if(/^\[[^\]]+\]$/.test(t)){h+='<span class="seg"><b class="ch">'+esc(tr(t.slice(1,-1),st.shift,st.flat))+'</b><span class="ly">'+esc(a[i+1]||"")+"</span></span>"}
+else if(i==0&&t){h+='<span class="seg"><b class="ch"> </b><span class="ly">'+esc(t)+"</span></span>"}});
+h+="</div>"})}
+$("main").innerHTML=h+"</article>"}
+function editView(){var s=cur();
+$("main").innerHTML='<div class="edit"><input type="text" id="t" placeholder="A dal címe" value="'+esc(s.title)+'"><textarea id="x" spellcheck="false" placeholder="[C]Dalszöveg [G]akkordokkal">'+esc(s.text||"")+'</textarea>'
++'<p class="hint">Az akkordot szögletes zárójelbe írd a szótag elé: [Am]. Angol jelölés (B = si). A „# Refrén” sor szakaszcím. Csak olyan dalt mentsd el, amelyhez van jogod.</p>'
++'<div class="bar"><button id="sv" class="pri">Mentés</button><button id="cn">Mégse</button></div></div>';
+$("sv").onclick=function(){s.title=$("t").value.trim();s.text=$("x").value;dbPut(s);st.editing=false;st.shift=0;draw()};
+$("cn").onclick=function(){if(s.isNew&&!s.title&&!s.text)removeSong(s);st.editing=false;draw()}}
+function draw(){setPlay(false);fillSel();var e=st.editing;
+$("tools").style.display=e?"none":"";$("fab").style.display=e?"none":"";
+if(e)editView();else view();window.scrollTo(0,0)}
+function removeSong(s){st.songs=st.songs.filter(function(z){return z!==s});dbDel(s.id);
+if(!st.songs.length){st.songs=[SAMPLE];dbPut(SAMPLE)}st.cur=st.songs[0].id}
+/* fájlok betöltése (txt, kép) természetes sorrendben */
+function shrink(f){return new Promise(function(res,rej){var u=URL.createObjectURL(f),im=new Image();
+im.onload=function(){var k=Math.min(1,1800/Math.max(im.width,im.height)),c=document.createElement("canvas");
+c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);var x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);
+x.drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",0.85))};
+im.onerror=function(){URL.revokeObjectURL(u);rej()};im.src=u})}
+async function importFiles(fl){var arr=Array.from(fl).sort(function(a,b){return a.name.localeCompare(b.name,"hu",{numeric:true,sensitivity:"base"})});
+var added=0,skip=0,last=null;note("Betöltés…");
+for(var i=0;i<arr.length;i++){var f=arr[i],title=f.name.replace(/\.[^.]+$/,"").replace(/_/g," ");
+if(st.songs.some(function(s){return s.title.toLowerCase()==title.toLowerCase()})){skip++;continue}
+var s={id:uid(),title:title,ord:nextOrd()};
+try{if(/\.txt$/i.test(f.name)||f.type=="text/plain"){s.type="text";s.text=await f.text()}
+else if(/^image\//.test(f.type)||/\.(png|jpe?g|webp)$/i.test(f.name)){s.type="image";s.img=await shrink(f)}
+else{skip++;continue}}catch(e){skip++;continue}
+st.songs.push(s);dbPut(s);added++;last=s}
+if(last){st.cur=last.id;st.shift=0}
+note(added+" fájl betöltve"+(skip?", "+skip+" kihagyva (már megvan vagy nem támogatott)":"")+".");draw()}
+/* automatikus görgetés */
+var lastT=0,acc=0,touching=false,wl=null;
+function loop(t){if(!st.play)return;var dt=Math.min(0.1,(t-lastT)/1000);lastT=t;
+if(!touching){acc+=dt*st.spd*9;var n=Math.floor(acc);if(n>0){acc-=n;window.scrollBy(0,n)}}
+if(window.innerHeight+window.pageYOffset>=document.documentElement.scrollHeight-2){setPlay(false);return}
+requestAnimationFrame(loop)}
+function setPlay(on){if(on==st.play)return;st.play=on;$("play").textContent=on?"⏸ Megállít":"▶ Görgetés";
+if(on){lastT=performance.now();acc=0;requestAnimationFrame(loop);
+try{if(navigator.wakeLock)navigator.wakeLock.request("screen").then(function(l){wl=l}).catch(function(){})}catch(e){}}
+else{try{if(wl){wl.release();wl=null}}catch(e){}}}
+document.addEventListener("touchstart",function(){touching=true},{passive:true});
+document.addEventListener("touchend",function(){touching=false},{passive:true});
+document.addEventListener("touchcancel",function(){touching=false},{passive:true});
+document.addEventListener("keydown",function(e){if(e.code=="Space"&&!st.editing&&!/INPUT|TEXTAREA|SELECT|BUTTON/.test(document.activeElement.tagName)){e.preventDefault();setPlay(!st.play)}});
+/* események */
+$("sel").onchange=function(){st.cur=this.value;st.shift=0;st.editing=false;note("");draw()};
+$("imp").onclick=function(){$("fi").click()};
+$("fi").onchange=function(){if(this.files.length)importFiles(this.files);this.value=""};
+$("new").onclick=function(){var s={id:uid(),title:"",text:"",type:"text",ord:nextOrd(),isNew:true};st.songs.push(s);st.cur=s.id;st.shift=0;st.editing=true;draw()};
+$("ed").onclick=function(){var s=cur();if(s.type=="image"){var n=prompt("A kép új címe:",s.title);if(n!==null){s.title=n.trim();dbPut(s);draw()}return}st.editing=true;draw()};
+$("del").onclick=function(){if(!confirm("Biztosan törlöd ezt a dalt?"))return;removeSong(cur());st.shift=0;st.editing=false;draw()};
+$("up").onclick=function(){st.shift=((st.shift+1+5)%12)-5;view()};
+$("dn").onclick=function(){st.shift=((st.shift-1+5+12)%12)-5;view()};
+$("fl").onclick=function(){st.flat=!st.flat;view()};
+function fsz(d){st.fs=Math.max(13,Math.min(40,st.fs+d));try{localStorage.setItem("akk.fs",st.fs)}catch(e){}view()}
+$("fp").onclick=function(){fsz(2)};$("fm").onclick=function(){fsz(-2)};
+$("play").onclick=function(){setPlay(!st.play)};
+$("spd").oninput=function(){st.spd=+this.value};
+/* songs.json be- és kimenet */
+function setDirty(v){st.dirty=v;var b=$("xjson");if(b)b.textContent="Mentés songs.json-ba"+(v?" ●":"")}
+function normalize(arr,base){var out=[];(arr||[]).forEach(function(o,i){if(!o||typeof o!="object")return;
+var img=o.type=="image";if(img&&!o.img)return;
+var s={id:uid(),title:String(o.title||"").trim(),type:img?"image":"text",ord:(base||0)+i+1};
+if(img)s.img=o.img;else s.text=String(o.text||"");out.push(s)});return out}
+async function importJSON(f){var data;try{data=JSON.parse(await f.text())}catch(e){note("Ez nem érvényes JSON fájl.");return}
+if(!Array.isArray(data)){note("A fájl nem dallista.");return}
+var inc=normalize(data,nextOrd()),added=0,upd=0;
+inc.forEach(function(n){var ex=st.songs.filter(function(s){return s.title.toLowerCase()==n.title.toLowerCase()})[0];
+if(ex){ex.type=n.type;ex.text=n.text;ex.img=n.img;dbPut(ex);upd++}else{st.songs.push(n);dbPut(n);added++}});
+var sk=data.length-inc.length;
+note(added+" új és "+upd+" frissített dal betöltve"+(sk?", "+sk+" kihagyva":"")+".");setDirty(false);draw()}
+function exportJSON(){var data=st.songs.slice().sort(function(a,b){return (a.ord||0)-(b.ord||0)}).map(function(s){
+var o={title:s.title,type:s.type||"text"};if(o.type=="image")o.img=s.img;else o.text=s.text||"";return o});
+var json=JSON.stringify(data,null,2),file=new File([json],"songs.json",{type:"application/json"});
+function dl(){var a=document.createElement("a");a.href=URL.createObjectURL(file);a.download="songs.json";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},4000);note("A songs.json letöltve.");setDirty(false)}
+if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:"songs.json"}).then(function(){note("A songs.json elmentve.");setDirty(false)}).catch(function(e){if(!e||e.name!="AbortError")dl()})}else dl()}
+$("ljson").onclick=function(){$("jfi").click()};
+$("jfi").onchange=function(){if(this.files.length)importJSON(this.files[0]);this.value=""};
+$("xjson").onclick=exportJSON;
+(async function(){try{var f=localStorage.getItem("akk.fs");if(f)st.fs=+f}catch(e){}
+await openDB();st.songs=await dbAll();
+if(!st.songs.length||(st.songs.length==1&&st.songs[0].id=="sample")){if(st.songs.length)dbDel("sample");st.songs=normalize(SEED);if(!st.songs.length)st.songs=[SAMPLE];st.songs.forEach(function(s){dbPut(s)});setDirty(false)}
+st.cur=st.songs.sort(function(a,b){return (a.ord||0)-(b.ord||0)})[0].id;draw()})();
+</script>
+</body>
+</html>
