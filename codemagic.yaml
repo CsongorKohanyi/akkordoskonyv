@@ -8,8 +8,9 @@ workflows:
     scripts:
       - name: Xcode-projekt generálása
         script: |
-          brew install xcodegen
-          xcodegen generate
+          curl -L -o xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/xcodegen.zip
+          unzip -q xcodegen.zip
+          ./xcodegen/bin/xcodegen generate
       - name: Build szimulátorra (aláírás nélkül)
         script: |
           xcodebuild -project Akkordkonyv.xcodeproj \
@@ -27,8 +28,9 @@ workflows:
     scripts:
       - name: Xcode-projekt generálása
         script: |
-          brew install xcodegen
-          xcodegen generate
+          curl -L -o xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/xcodegen.zip
+          unzip -q xcodegen.zip
+          ./xcodegen/bin/xcodegen generate
       - name: Build eszközre, aláírás nélkül
         script: |
           xcodebuild -project Akkordkonyv.xcodeproj \
