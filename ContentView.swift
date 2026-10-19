@@ -29,7 +29,7 @@ struct ContentView: View {
         }
         .fileImporter(
             isPresented: $showImporter,
-            allowedContentTypes: [.plainText, .png, .jpeg, .webP],
+            allowedContentTypes: [.plainText, .json, .png, .jpeg, .webP],
             allowsMultipleSelection: true
         ) { result in
             handleImport(result)
