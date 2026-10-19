@@ -8,13 +8,22 @@ targets:
     type: application
     platform: iOS
     sources:
-      - Akkordkonyv
+      - path: .
+        excludes:
+          - "*.yml"
+          - "*.yaml"
+          - "*.zip"
+          - "*.md"
+          - xcodegen
+          - Payload
+          - build
+          - Info.plist
     info:
-      path: Akkordkonyv/Info.plist
+      path: Info.plist
       properties:
         CFBundleDisplayName: Akkordkönyv
         UILaunchScreen: {}
-        UIFileSharingEnabled: true               # a Fájlok appban látszik a mappa
+        UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
