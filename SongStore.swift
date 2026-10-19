@@ -148,7 +148,19 @@ final class SongStore: ObservableObject {
             let ext = url.pathExtension.lowercased()
             let title = url.deletingPathExtension().lastPathComponent.replacingOccurrences(of: "_", with: " ")
             do {
-                if ext == "txt" {
+                if ext == "json" {
+                    let data = try Data(contentsOf: url)
+                    let decoded = try JSONDecoder().decode([Song].self, from: data)
+                    // csak a szöveges dalok jönnek át (a képek útvonala az asztali gépre mutat)
+                    for var s in decoded where s.kind == .text {
+                        s.id = UUID()
+                        s.file = nil
+                        if !songs.contains(where: { $0.title.lowercased() == s.title.lowercased() }) {
+                            songs.append(s)
+                            last = s
+                        }
+                    }
+                } else if ext == "txt" {
                     let content = try String(contentsOf: url, encoding: .utf8)
                     let s = Song(title: title, text: content, kind: .text)
                     songs.append(s)
